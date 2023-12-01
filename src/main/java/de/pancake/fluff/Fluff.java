@@ -1,9 +1,13 @@
 package de.pancake.fluff;
 
-import de.pancake.fluff.utils.AudioPlayer;
-import de.pancake.fluff.utils.BufferManager;
-import de.pancake.fluff.utils.YouTubeDownloader;
+import de.pancake.fluff.utils.*;
 
+import java.awt.*;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -88,6 +92,20 @@ public class Fluff {
             }
 
             return null;
+        });
+    }
+
+    /**
+     * Play the next track in the queue or wait for a new one
+     */
+    public void playNext() {
+        CompletableFuture.runAsync(() -> {
+            // Wait until queue is not empty
+            while (this.queue.isEmpty())
+                Thread.yield();
+
+            // Play next track
+            this.queue.poll().run();
         });
     }
 
