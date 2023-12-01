@@ -1,9 +1,10 @@
 plugins {
     id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 application {
-    mainClassName = 'de.pancake.fluff.Fluff'
+    mainClass = 'de.pancake.fluff.Fluff'
 }
 
 base {
