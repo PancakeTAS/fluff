@@ -11,9 +11,13 @@ public class AudioPlayer {
 
     /** The command to run ffplay */
     private static final String[] FFPLAY = { "ffplay.exe", "-nodisp", "-nostats", "-autoexit", "-" };
+    /** The command to run SoundVolumeView */
+    private static final String[] SOUND_VOLUME_VIEW = { "SoundVolumeView.exe", "/SetVolume", "ffplay", "100" };
 
     /** The current track */
     private Process process;
+    /** The current volume */
+    private int volume = 100;
 
     /**
      * Play audio from a buffer
@@ -52,6 +56,35 @@ public class AudioPlayer {
     public void stop() {
         if (this.process != null)
             this.process.destroyForcibly();
+    }
+
+    /**
+     * Set the volume of the audio player
+     */
+    private void setVolume() {
+        try {
+            SOUND_VOLUME_VIEW[3] = String.valueOf(this.volume);
+            var processBuilder = new ProcessBuilder(SOUND_VOLUME_VIEW);
+            processBuilder.start();
+        } catch (IOException ignored) {
+
+        }
+    }
+
+    /**
+     * Increase the volume by 10%
+     */
+    public void increaseVolume() {
+        this.volume = Math.min(100, this.volume + 10);
+        this.setVolume();
+    }
+
+    /**
+     * Decrease the volume by 10%
+     */
+    public void decreaseVolume() {
+        this.volume = Math.max(0, this.volume - 10);
+        this.setVolume();
     }
 
 }
