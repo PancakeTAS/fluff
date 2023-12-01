@@ -1,0 +1,20 @@
+plugins {
+    id 'application'
+}
+
+application {
+    mainClassName = 'de.pancake.fluff.Fluff'
+}
+
+base {
+    group = 'de.pancake'
+    version = '1.0.0-SNAPSHOT'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'com.github.tulskiy', name: 'jkeymaster', version: '1.3'
+}
