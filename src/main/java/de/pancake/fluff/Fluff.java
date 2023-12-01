@@ -16,6 +16,8 @@ public class Fluff {
     private final YouTubeDownloader youTubeDownloader = new YouTubeDownloader();
     /** The audio player instance */
     private final AudioPlayer audioPlayer = new AudioPlayer();
+    /** The tray instance */
+    private final Tray tray = new Tray();
 
     /** The queue of tasks to play tracks */
     private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
