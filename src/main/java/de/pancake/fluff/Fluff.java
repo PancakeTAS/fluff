@@ -19,8 +19,24 @@ public class Fluff {
     /** The tray instance */
     private final Tray tray = new Tray();
 
+    /** The list of tracks to play */
+    private final Queue<String> tracks = new ConcurrentLinkedQueue<>();
     /** The queue of tasks to play tracks */
     private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
+
+    /**
+     * Load the tracks from the tracks.txt file
+     * @throws Exception If an error occurs while reading the file
+     */
+    public void loadTracks() throws Exception {
+        this.tracks.clear();
+        this.queue.clear();
+
+        var tracks = Files.readAllLines(Path.of(System.getProperty("user.home"), "/Music", "/fluff.txt"));
+        Collections.shuffle(tracks);
+        this.tracks.addAll(tracks);
+    }
+
     /**
      * Prepare a track for playing
      *
