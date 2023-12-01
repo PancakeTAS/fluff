@@ -42,6 +42,35 @@ public class Fluff {
     }
 
     /**
+     * Start the application
+     * @throws Exception If the application is interrupted
+     */
+    public void start() throws Exception {
+        // Play first track
+        this.playNext();
+
+        // Load tracks
+        this.loadTracks();
+
+        // Prepare tracks in background
+        while (true) {
+            // Wait for a track to play
+            Thread.sleep(1000);
+
+            // Wait for free buffer
+            if (this.bufferManager.findBuffer(BufferManager.BufferStatus.EMPTY) == -1)
+                continue;
+
+            // Load tracks if there are none
+            if (this.tracks.isEmpty())
+                this.loadTracks();
+
+            // Prepare track
+            this.prepareTrack(this.tracks.poll());
+        }
+    }
+
+    /**
      * Prepare a track for playing
      *
      * @param url The track url
@@ -107,6 +136,16 @@ public class Fluff {
             // Play next track
             this.queue.poll().run();
         });
+    }
+
+    /**
+     * The main method of the application
+     * @param args The command line arguments
+     * @throws Exception If the application is interrupted
+     */
+    public static void main(String[] args) throws Exception {
+        var fluff = new Fluff();
+        fluff.start();
     }
 
 }
