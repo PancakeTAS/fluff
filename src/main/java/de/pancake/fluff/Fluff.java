@@ -27,6 +27,10 @@ public class Fluff {
     private final Queue<String> tracks = new ConcurrentLinkedQueue<>();
     /** The queue of tasks to play tracks */
     private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
+    /** The current track url */
+    private String currentTrack;
+    /** Is the application playing */
+    private boolean playing = true;
 
     /**
      * Load the tracks from the tracks.txt file
@@ -103,8 +107,9 @@ public class Fluff {
                         // Play audio from buffer
                         try {
                             System.out.println("Playing audio... (" + url + ")");
+                            this.currentTrack = url;
                             this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.PLAYING);
-                            this.audioPlayer.playAudio(buffer, bytesRead).onExit().thenRun(() -> System.out.println("Finished playing audio! (" + url + ")"));
+                            this.audioPlayer.playAudio(buffer, bytesRead).onExit().thenRun(this::playNext);
                         } catch (Exception e) {
                             System.err.println("Error while playing audio!");
                             e.printStackTrace();
@@ -128,6 +133,9 @@ public class Fluff {
      * Play the next track in the queue or wait for a new one
      */
     public void playNext() {
+        if (!this.playing)
+            return;
+
         CompletableFuture.runAsync(() -> {
             // Wait until queue is not empty
             while (this.queue.isEmpty())
