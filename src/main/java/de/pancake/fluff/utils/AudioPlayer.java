@@ -25,7 +25,7 @@ public class AudioPlayer {
      * @param buffer The buffer to read the audio from
      * @param length The length of the audio in the buffer
      * @throws Exception If an error occurs while playing the audio
-     * @return A completable future that completes when the audio has finished playing
+     * @return The process playing the audio
      */
     public Process playAudio(byte[] buffer, int length) throws Exception {
         // Stop current track

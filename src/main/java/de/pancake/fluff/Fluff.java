@@ -70,16 +70,27 @@ public class Fluff {
             // Wait for a track to play
             Thread.sleep(1000);
 
-            // Wait for free buffer
-            if (this.bufferManager.findBuffer(BufferManager.BufferStatus.EMPTY) == -1)
-                continue;
-
             // Load tracks if there are none
             if (this.tracks.isEmpty())
                 this.loadTracks();
 
-            // Prepare track
-            this.prepareTrack(this.tracks.poll());
+            // Find empty buffer
+            int emptyBufferIndex = this.bufferManager.findBuffer(BufferManager.BufferStatus.EMPTY);
+            if (emptyBufferIndex == -1)
+                continue;
+
+            // Get next track and set buffer to filling
+            var url = this.tracks.poll();
+            this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.FILLING);
+
+            // Try to prepare track
+            try {
+                this.prepareTrack(url, emptyBufferIndex);
+            } catch (Exception e) {
+                System.err.println("Error while preparing track! (" + url + ")");
+                e.printStackTrace();
+                this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.EMPTY);
+            }
         }
     }
 
@@ -87,59 +98,39 @@ public class Fluff {
      * Prepare a track for playing
      *
      * @param url The track url
+     * @throws Exception If an error occurs while preparing the track
      */
-    private void prepareTrack(String url) {
-        CompletableFuture.supplyAsync(() -> {
-            System.out.println("Waiting for free buffer... (" + url + ")");
+    private void prepareTrack(String url, int emptyBufferIndex) throws Exception {
+        System.out.println("Downloading audio... (" + url + ")");
 
-            // Get first empty buffer and update it to filling
-            int i;
-            do {
-                i = this.bufferManager.findBuffer(BufferManager.BufferStatus.EMPTY);
-            } while (i == -1);
-            int emptyBufferIndex = i;
+        // Download video
+        var buffer = this.bufferManager.getBuffer(emptyBufferIndex);
+        var bytesRead = this.youTubeDownloader.downloadYoutubeVideo(url, buffer);
 
-            this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.FILLING);
-            var buffer = this.bufferManager.getBuffer(emptyBufferIndex);
+        // Update buffer to full
+        this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.FULL);
+        System.out.println("Finished downloading audio! (" + url + ")");
 
-            // Download video and add play task to queue
+        // Add play task to queue
+        this.queue.add(() -> {
+            // Play audio from buffer
             try {
-                System.out.println("Downloading audio... (" + url + ")");
-                this.youTubeDownloader.downloadYoutubeVideo(url, buffer).thenAccept(bytesRead -> {
-                    System.out.println("Finished downloading audio! (" + url + ")");
-
-                    // Update buffer to full
-                    this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.FULL);
-
-                    // Add play task to queue
-                    this.queue.add(() -> {
-                        // Play audio from buffer
-                        try {
-                            System.out.println("Playing audio... (" + url + ")");
-                            this.currentTrack = url;
-                            this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.PLAYING);
-                            this.audioPlayer.playAudio(buffer, bytesRead).onExit().thenRun(this::playNext);
-                        } catch (Exception e) {
-                            System.err.println("Error while playing audio!");
-                            e.printStackTrace();
-                        }
-
-                        // Update buffer to empty
-                        this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.EMPTY);
-                    });
-                });
+                System.out.println("Playing audio... (" + url + ")");
+                this.currentTrack = url;
+                this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.PLAYING);
+                this.audioPlayer.playAudio(buffer, bytesRead).onExit().thenRun(this::playNext);
             } catch (Exception e) {
-                System.err.println("Error while downloading audio! (" + url + ")");
+                System.err.println("Error while playing audio!");
                 e.printStackTrace();
-                this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.EMPTY);
             }
 
-            return null;
+            // Update buffer to empty
+            this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.EMPTY);
         });
     }
 
     /**
-     * Play the next track in the queue or wait for a new one
+     * Play the next track in the queue or wait for a new one asynchronously
      */
     public void playNext() {
         if (!this.playing)
