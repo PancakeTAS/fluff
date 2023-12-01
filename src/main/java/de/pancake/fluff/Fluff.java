@@ -22,6 +22,15 @@ public class Fluff {
     private final AudioPlayer audioPlayer = new AudioPlayer();
     /** The tray instance */
     private final Tray tray = new Tray();
+    /** The media keys instance */
+    private final MediaKeys mediaKeys = new MediaKeys(
+            this.audioPlayer::decreaseVolume,
+            this.audioPlayer::increaseVolume,
+            this::remove,
+            this::togglePlay,
+            this.audioPlayer::stop,
+            this::browse
+    );
 
     /** The list of tracks to play */
     private final Queue<String> tracks = new ConcurrentLinkedQueue<>();
@@ -144,6 +153,47 @@ public class Fluff {
             // Play next track
             this.queue.poll().run();
         });
+    }
+
+    /**
+     * Browse to the current track
+     */
+    public void browse() {
+        try {
+            Desktop.getDesktop().browse(URI.create(currentTrack));
+        } catch (IOException ignored) {
+
+        }
+    }
+
+    /**
+     * Toggle the play state of the audio player
+     */
+    public void togglePlay() {
+        try {
+            this.playing = !this.playing;
+            if (this.playing)
+                this.playNext();
+            else
+                this.audioPlayer.stop();
+        } catch (Exception ignored) {
+
+        }
+    }
+
+    /**
+     * Remove the current track from the list of tracks
+     */
+    public void remove() {
+        try {
+            var tracks = Files.readAllLines(Path.of(System.getProperty("user.home"), "/Music", "/fluff.txt"));
+            tracks.remove(this.currentTrack);
+            Files.write(Path.of(System.getProperty("user.home"), "/Music", "/fluff.txt"), tracks);
+            this.loadTracks();
+            this.audioPlayer.stop();
+        } catch (Exception ignored) {
+
+        }
     }
 
     /**
