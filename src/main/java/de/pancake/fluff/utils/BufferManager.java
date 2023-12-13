@@ -17,7 +17,7 @@ public class BufferManager {
     /** Buffer size **/
     private static final int BUFFER_SIZE = 1024 * 1024 * 16;
     /** Buffer count **/
-    private static final int BUFFER_COUNT = 4;
+    private static final int BUFFER_COUNT = 12;
 
     /** Buffers **/
     private final byte[][] buffers = new byte[BUFFER_COUNT][BUFFER_SIZE];

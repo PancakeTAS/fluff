@@ -10,7 +10,7 @@ import java.io.IOException;
 public class AudioPlayer {
 
     /** The command to run ffplay */
-    private static final String[] FFPLAY = { "ffplay.exe", "-nodisp", "-nostats", "-autoexit", "-" };
+    private static final String[] FFPLAY = { "ffplay.exe", "-nodisp", "-af", "silenceremove=1:0:-55dB", "-fflags", "nobuffer", "-flags", "low_delay", "-framedrop", "-strict", "experimental", "-nostats", "-autoexit", "-" };
     /** The command to run SoundVolumeView */
     private static final String[] SOUND_VOLUME_VIEW = { "SoundVolumeView.exe", "/SetVolume", "ffplay", "100" };
 
