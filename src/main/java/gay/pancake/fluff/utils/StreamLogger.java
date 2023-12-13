@@ -1,4 +1,4 @@
-package de.pancake.fluff.utils;
+package gay.pancake.fluff.utils;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

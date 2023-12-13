@@ -1,4 +1,4 @@
-package de.pancake.fluff.utils;
+package gay.pancake.fluff.utils;
 
 /**
  * Class wrapping around yt-dlp for streaming youtube videos.

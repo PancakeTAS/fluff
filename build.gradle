@@ -4,11 +4,11 @@ plugins {
 }
 
 application {
-    mainClass = 'de.pancake.fluff.Fluff'
+    mainClass = 'gay.pancake.fluff.Fluff'
 }
 
 base {
-    group = 'de.pancake'
+    group = 'gay.pancake'
     version = '1.0.0-SNAPSHOT'
 }
 

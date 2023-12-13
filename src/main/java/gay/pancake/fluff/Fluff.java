@@ -1,6 +1,6 @@
-package de.pancake.fluff;
+package gay.pancake.fluff;
 
-import de.pancake.fluff.utils.*;
+import gay.pancake.fluff.utils.*;
 
 import java.awt.*;
 import java.io.IOException;

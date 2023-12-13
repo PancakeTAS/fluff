@@ -1,4 +1,4 @@
-package de.pancake.fluff.utils;
+package gay.pancake.fluff.utils;
 
 import java.util.Arrays;
 
