@@ -103,6 +103,7 @@ public class PlaybackEngine {
                 // Close audio line
                 line.drain();
                 line.close();
+                streamLogger.stop();
                 process.destroy();
             } catch (Exception e) {
                 e.printStackTrace();

@@ -46,4 +46,15 @@ public class StreamLogger {
         });
     }
 
+    /**
+     * Stop logging the stream
+     */
+    public void stop() {
+        try {
+            this.stream.close();
+        } catch (Exception ignored) {
+
+        }
+    }
+
 }
