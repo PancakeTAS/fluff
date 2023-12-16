@@ -2,8 +2,8 @@ package gay.pancake.fluff;
 
 import gay.pancake.fluff.utils.MediaKeys;
 import gay.pancake.fluff.utils.PlaybackEngine;
-import gay.pancake.fluff.utils.Tray;
 
+import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
@@ -18,8 +18,6 @@ public class Fluff {
 
     /** The youtube downloader instance */
     private final PlaybackEngine youTubeDownloader = new PlaybackEngine();
-    /** The tray instance */
-    private final Tray tray = new Tray();
     /** The media keys instance */
     private final MediaKeys mediaKeys = new MediaKeys(
             this.youTubeDownloader::decreaseVolume,
@@ -152,10 +150,11 @@ public class Fluff {
      * @throws Exception If the application is interrupted
      */
     public static void main(String[] args) throws Exception {
-            PlaybackEngine.listDevices();
+        // Check arguments
         if (args.length == 0) {
             System.out.println("Starting Fluff...");
         } else if (args.length == 1 && args[0].equals("--list-devices")) {
+            PlaybackEngine.listDevices();
             return;
         } else if (args.length >= 2 && args[0].equals("--set-device")) {
             PlaybackEngine.defaultAudioDevice(String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
@@ -164,6 +163,17 @@ public class Fluff {
             return;
         }
 
+        // Try to create tray icon
+        try {
+            var trayIcon = new TrayIcon(new ImageIcon(Objects.requireNonNull(Fluff.class.getResource("/fluff.png"))).getImage(), "Fluff");
+            trayIcon.setImageAutoSize(true);
+            trayIcon.addActionListener(e -> System.exit(0));
+            SystemTray.getSystemTray().add(trayIcon);
+        } catch (Exception ignored) {
+
+        }
+
+        // Start application
         var fluff = new Fluff();
         fluff.start();
     }
