@@ -14,7 +14,7 @@ public class PlaybackEngine {
     /** The command to run yt-dlp */
     private static final String YTDL = "yt-dlp %URL% --no-part --no-warnings --no-playlist --no-check-certificate -f ba -o -";
     /** The command to run ffmpeg */
-    private static final String FFMPEG = "ffmpeg -i - -c:a pcm_s16le -af \"silenceremove=1:0:-55dB\" -f s16le -ar 192000 -";
+    private static final String FFMPEG = "ffmpeg -rtbufsize 64M -i - -c:a pcm_s16le -bufsize 64M -af \"silenceremove=1:0:-55dB\" -f s16le -ar 192000 -";
 
     /** The mixer */
     private static Mixer mixer;
@@ -97,7 +97,7 @@ public class PlaybackEngine {
                 this.volumeControl.setValue(this.volume);
 
                 // Read from input stream and write to audio line
-                var buffer = new byte[4096];
+                var buffer = new byte[1024];
                 var read = 0;
                 while (!Thread.currentThread().getName().equals("Exited") && (read = inputStream.read(buffer)) != -1) {
                     while (this.paused)
@@ -109,7 +109,8 @@ public class PlaybackEngine {
                 // Close audio line
                 line.drain();
                 line.close();
-                streamLogger.stop();
+                if (Thread.currentThread().getName().equals("Exited"))
+                    streamLogger.stop();
                 process.destroy();
             } catch (Exception e) {
                 e.printStackTrace();
