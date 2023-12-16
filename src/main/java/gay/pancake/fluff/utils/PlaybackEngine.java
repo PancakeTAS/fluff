@@ -10,11 +10,11 @@ import javax.sound.sampled.*;
 public class PlaybackEngine {
 
     /** Audio format */
-    private static final AudioFormat AUDIO_FORMAT = new AudioFormat(48000, 16, 2, true, false);
+    private static final AudioFormat AUDIO_FORMAT = new AudioFormat(192000, 16, 2, true, false);
     /** The command to run yt-dlp */
     private static final String YTDL = "yt-dlp %URL% --no-part --no-warnings --no-playlist --no-check-certificate -f ba -o -";
     /** The command to run ffmpeg */
-    private static final String FFMPEG = "ffmpeg -i - -c:a pcm_s16le -af \"silenceremove=1:0:-55dB\" -f s16le -ar 44100 -";
+    private static final String FFMPEG = "ffmpeg -i - -c:a pcm_s16le -af \"silenceremove=1:0:-55dB\" -f s16le -ar 192000 -";
 
     /** The mixer */
     private static Mixer mixer;
@@ -22,7 +22,7 @@ public class PlaybackEngine {
     /** The current volume */
     private FloatControl volumeControl;
     /** The volume before muting */
-    private float volume = -10.0f;
+    private float volume = -20.0f;
 
     /**
      * List all available audio devices
