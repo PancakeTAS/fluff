@@ -19,4 +19,4 @@ Use the media keys (next, previous, pause/play) to control the current track pla
 You can also press the search key (if you have one) to open the current track in your browser.
 
 ## How does it work?
-Fluff uses yt-dlp to download up to twelve tracks at a time, encodes them using ffmpeg and then plays them using the Java Sound API. Pausing will become a feature too.. eventually
+Fluff uses yt-dlp to download up to twelve tracks at a time, encodes them using ffmpeg and then plays them using the Java Sound API.

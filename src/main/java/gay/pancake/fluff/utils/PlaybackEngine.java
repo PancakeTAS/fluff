@@ -23,6 +23,8 @@ public class PlaybackEngine {
     private FloatControl volumeControl;
     /** The volume before muting */
     private float volume = -20.0f;
+    /** Is paused */
+    public boolean paused = false;
 
     /**
      * List all available audio devices
@@ -97,8 +99,12 @@ public class PlaybackEngine {
                 // Read from input stream and write to audio line
                 var buffer = new byte[4096];
                 var read = 0;
-                while (!Thread.currentThread().getName().equals("Exited") && (read = inputStream.read(buffer)) != -1)
+                while (!Thread.currentThread().getName().equals("Exited") && (read = inputStream.read(buffer)) != -1) {
+                    while (this.paused)
+                        Thread.sleep(16L);
+
                     line.write(buffer, 0, read);
+                }
 
                 // Close audio line
                 line.drain();

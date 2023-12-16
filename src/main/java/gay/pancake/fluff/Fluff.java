@@ -17,11 +17,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class Fluff {
 
     /** The youtube downloader instance */
-    private final PlaybackEngine youTubeDownloader = new PlaybackEngine();
+    private final PlaybackEngine playbackEngine = new PlaybackEngine();
     /** The media keys instance */
     private final MediaKeys mediaKeys = new MediaKeys(
-            this.youTubeDownloader::decreaseVolume,
-            this.youTubeDownloader::increaseVolume,
+            this.playbackEngine::decreaseVolume,
+            this.playbackEngine::increaseVolume,
             this::remove,
             this::togglePlay,
             this::playNext,
@@ -80,7 +80,7 @@ public class Fluff {
             // Try to prepare track
             try {
                 System.out.println("Downloading audio... (" + url + ")");
-                this.queue.add(new AbstractMap.SimpleEntry<>(this.youTubeDownloader.downloadYoutubeVideo(url, this::playNext), url));
+                this.queue.add(new AbstractMap.SimpleEntry<>(this.playbackEngine.downloadYoutubeVideo(url, this::playNext), url));
             } catch (Exception e) {
                 System.err.println("Error while preparing track! (" + url + ")");
                 e.printStackTrace();
@@ -123,10 +123,7 @@ public class Fluff {
      * Toggle the play state of the audio player
      */
     public void togglePlay() {
-        if (!this.currentPlayback.isAlive())
-            this.playNext();
-        else
-            this.currentPlayback.setName("Exited");
+        this.playbackEngine.paused = !this.playbackEngine.paused;
     }
 
     /**
