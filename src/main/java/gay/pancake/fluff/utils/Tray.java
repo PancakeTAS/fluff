@@ -11,19 +11,15 @@ import java.util.Objects;
  */
 public class Tray {
 
-    /** The tray icon */
-    private final TrayIcon trayIcon;
-
     /**
      * Initialize the tray
      */
     public Tray() {
-        this.trayIcon = new TrayIcon(new ImageIcon(Objects.requireNonNull(Tray.class.getResource("/fluff.png"))).getImage(), "Fluff");
-        this.trayIcon.setImageAutoSize(true);
-        this.trayIcon.addActionListener(e -> System.exit(0));
-
         try {
-            SystemTray.getSystemTray().add(this.trayIcon);
+            var trayIcon = new TrayIcon(new ImageIcon(Objects.requireNonNull(Tray.class.getResource("/fluff.png"))).getImage(), "Fluff");
+            trayIcon.setImageAutoSize(true);
+            trayIcon.addActionListener(e -> System.exit(0));
+            SystemTray.getSystemTray().add(trayIcon);
         } catch (Exception ignored) {
 
         }
