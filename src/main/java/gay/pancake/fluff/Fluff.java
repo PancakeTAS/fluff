@@ -1,45 +1,43 @@
 package gay.pancake.fluff;
 
-import gay.pancake.fluff.utils.*;
+import gay.pancake.fluff.utils.MediaKeys;
+import gay.pancake.fluff.utils.PlaybackEngine;
+import gay.pancake.fluff.utils.Tray;
 
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Fluff {
 
-    /** The buffer manager instance */
-    private final BufferManager bufferManager = new BufferManager();
     /** The youtube downloader instance */
-    private final YouTubeDownloader youTubeDownloader = new YouTubeDownloader();
-    /** The audio player instance */
-    private final AudioPlayer audioPlayer = new AudioPlayer();
+    private final PlaybackEngine youTubeDownloader = new PlaybackEngine();
     /** The tray instance */
     private final Tray tray = new Tray();
     /** The media keys instance */
     private final MediaKeys mediaKeys = new MediaKeys(
-            this.audioPlayer::decreaseVolume,
-            this.audioPlayer::increaseVolume,
+            this.youTubeDownloader::decreaseVolume,
+            this.youTubeDownloader::increaseVolume,
             this::remove,
             this::togglePlay,
-            this.audioPlayer::stop,
+            this::playNext,
             this::browse
     );
 
     /** The list of tracks to play */
     private final Queue<String> tracks = new ConcurrentLinkedQueue<>();
     /** The queue of tasks to play tracks */
-    private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
-    /** The current track url */
-    private String currentTrack;
-    /** Is the application playing */
-    private boolean playing = true;
+    private final Queue<Map.Entry<Thread, String>> queue = new ConcurrentLinkedQueue<>();
+    /** Current track */
+    private String currentTrack = null;
+    /** Current playback thread */
+    private Thread currentPlayback = null;
 
     /**
      * Load the tracks from the tracks.txt file
@@ -60,7 +58,7 @@ public class Fluff {
      */
     public void start() throws Exception {
         // Play first track
-        this.playNext();
+        CompletableFuture.runAsync(this::playNext);
 
         // Load tracks
         this.loadTracks();
@@ -74,76 +72,42 @@ public class Fluff {
             if (this.tracks.isEmpty())
                 this.loadTracks();
 
-            // Find empty buffer
-            int emptyBufferIndex = this.bufferManager.findBuffer(BufferManager.BufferStatus.EMPTY);
-            if (emptyBufferIndex == -1)
+            // Track only up to 12 tracks
+            if (this.queue.size() > 12)
                 continue;
 
-            // Get next track and set buffer to filling
+            // Get next track
             var url = this.tracks.poll();
-            this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.FILLING);
 
             // Try to prepare track
             try {
-                this.prepareTrack(url, emptyBufferIndex);
+                System.out.println("Downloading audio... (" + url + ")");
+                this.queue.add(new AbstractMap.SimpleEntry<>(this.youTubeDownloader.downloadYoutubeVideo(url, this::playNext), url));
             } catch (Exception e) {
                 System.err.println("Error while preparing track! (" + url + ")");
                 e.printStackTrace();
-                this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.EMPTY);
             }
         }
     }
 
     /**
-     * Prepare a track for playing
-     *
-     * @param url The track url
-     * @throws Exception If an error occurs while preparing the track
-     */
-    private void prepareTrack(String url, int emptyBufferIndex) throws Exception {
-        System.out.println("Downloading audio... (" + url + ")");
-
-        // Download video
-        var buffer = this.bufferManager.getBuffer(emptyBufferIndex);
-        var bytesRead = this.youTubeDownloader.downloadYoutubeVideo(url, buffer);
-
-        // Update buffer to full
-        this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.FULL);
-        System.out.println("Finished downloading audio! (" + url + ")");
-
-        // Add play task to queue
-        this.queue.add(() -> {
-            // Play audio from buffer
-            try {
-                System.out.println("Playing audio... (" + url + ")");
-                this.currentTrack = url;
-                this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.PLAYING);
-                this.audioPlayer.playAudio(buffer, bytesRead).onExit().thenRun(this::playNext);
-            } catch (Exception e) {
-                System.err.println("Error while playing audio!");
-                e.printStackTrace();
-            }
-
-            // Update buffer to empty
-            this.bufferManager.setBufferStatus(emptyBufferIndex, BufferManager.BufferStatus.EMPTY);
-        });
-    }
-
-    /**
-     * Play the next track in the queue or wait for a new one asynchronously
+     * Play the next track in the queue
      */
     public void playNext() {
-        if (!this.playing)
-            return;
+        // Set current playback to exited
+        if (this.currentPlayback != null && this.currentPlayback.isAlive())
+            this.currentPlayback.setName("Exited");
 
-        CompletableFuture.runAsync(() -> {
-            // Wait until queue is not empty
-            while (this.queue.isEmpty())
-                Thread.yield();
+        // Wait until queue is not empty
+        while (this.queue.isEmpty())
+            Thread.yield();
 
-            // Play next track
-            this.queue.poll().run();
-        });
+        // Play next track
+        System.out.println("Playing next track...");
+        var entry = this.queue.poll();
+        this.currentPlayback = Objects.requireNonNull(entry).getKey();
+        this.currentTrack = entry.getValue();
+        this.currentPlayback.start();
     }
 
     /**
@@ -151,7 +115,7 @@ public class Fluff {
      */
     public void browse() {
         try {
-            Desktop.getDesktop().browse(URI.create(currentTrack));
+            Desktop.getDesktop().browse(URI.create(this.currentTrack));
         } catch (IOException ignored) {
 
         }
@@ -161,15 +125,10 @@ public class Fluff {
      * Toggle the play state of the audio player
      */
     public void togglePlay() {
-        try {
-            this.playing = !this.playing;
-            if (this.playing)
-                this.playNext();
-            else
-                this.audioPlayer.stop();
-        } catch (Exception ignored) {
-
-        }
+        if (!this.currentPlayback.isAlive())
+            this.playNext();
+        else
+            this.currentPlayback.setName("Exited");
     }
 
     /**
@@ -181,7 +140,7 @@ public class Fluff {
             tracks.remove(this.currentTrack);
             Files.write(Path.of(System.getProperty("user.home"), "/Music", "/fluff.txt"), tracks);
             this.loadTracks();
-            this.audioPlayer.stop();
+            this.playNext();
         } catch (Exception ignored) {
 
         }
@@ -193,6 +152,18 @@ public class Fluff {
      * @throws Exception If the application is interrupted
      */
     public static void main(String[] args) throws Exception {
+            PlaybackEngine.listDevices();
+        if (args.length == 0) {
+            System.out.println("Starting Fluff...");
+        } else if (args.length == 1 && args[0].equals("--list-devices")) {
+            return;
+        } else if (args.length >= 2 && args[0].equals("--set-device")) {
+            PlaybackEngine.defaultAudioDevice(String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
+        } else {
+            System.err.println("Invalid arguments! (Use --list-devices or --set-device)");
+            return;
+        }
+
         var fluff = new Fluff();
         fluff.start();
     }

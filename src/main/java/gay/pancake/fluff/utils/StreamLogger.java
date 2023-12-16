@@ -29,13 +29,17 @@ public class StreamLogger {
 
     /**
      * Start logging the stream
+     * @param playNext The runnable to run when the stream ends
      */
-    public void start() {
+    public void start(Runnable playNext) {
         Thread.ofPlatform().name("StreamLogger: " + this.prefix).daemon(true).start(() -> {
             try {
                 String line;
-                while ((line = this.stream.readLine()) != null)
+                while ((line = this.stream.readLine()) != null) {
                     System.err.println(this.prefix + " >>> " + line);
+                    if (line.contains("video:0kB"))
+                        playNext.run();
+                }
             } catch (Exception ignored) {
 
             }
