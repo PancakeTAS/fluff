@@ -25,6 +25,7 @@ public class Fluff {
             this::remove,
             this::togglePlay,
             this::playNext,
+            this::playPrevious,
             this::browse
     );
 
@@ -32,6 +33,8 @@ public class Fluff {
     private final Queue<String> tracks = new ConcurrentLinkedQueue<>();
     /** The queue of tasks to play tracks */
     private final Queue<Map.Entry<Thread, String>> queue = new ConcurrentLinkedQueue<>();
+    /** The queue of tasks to play tracks */
+    private final Stack<String> previousTracks = new Stack<>();
     /** Current track */
     private String currentTrack = null;
     /** Current playback thread */
@@ -92,6 +95,10 @@ public class Fluff {
      * Play the next track in the queue
      */
     public void playNext() {
+        // Add current track to previous tracks
+        if (this.currentTrack != null)
+            this.previousTracks.push(this.currentTrack);
+
         // Set current playback to exited
         if (this.currentPlayback != null && this.currentPlayback.isAlive())
             this.currentPlayback.setName("Exited");
@@ -106,6 +113,28 @@ public class Fluff {
         this.currentPlayback = Objects.requireNonNull(entry).getKey();
         this.currentTrack = entry.getValue();
         this.currentPlayback.start();
+    }
+
+    /**
+     * Play the previous track from the stack
+     */
+    public void playPrevious() {
+        // Check if there are previous tracks
+        if (this.previousTracks.isEmpty() || this.currentTrack == null)
+            return;
+
+        try {
+            // Stop current playback
+            this.currentPlayback.setName("Exited");
+
+            // Play previous track
+            var url = this.previousTracks.pop();
+            this.currentPlayback = this.playbackEngine.downloadYoutubeVideo(url, this::playNext);
+            this.currentTrack = url;
+            this.currentPlayback.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**

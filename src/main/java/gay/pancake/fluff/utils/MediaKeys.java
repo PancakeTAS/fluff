@@ -15,7 +15,7 @@ public class MediaKeys {
     private final Provider provider = Provider.getCurrentProvider(false);
 
     /** Media key callbacks */
-    private final Runnable quieter, louder, stopMedia, togglePlay, nextTrack, search;
+    private final Runnable quieter, louder, stopMedia, togglePlay, nextTrack, previousTrack, search;
 
     /**
      * Initialize media keys
@@ -25,14 +25,16 @@ public class MediaKeys {
      * @param stopMedia Stop media callback
      * @param togglePlay Toggle play callback
      * @param nextTrack Next track callback
+     * @param previousTrack Previous track callback
      * @param search Search callback
      */
-    public MediaKeys(Runnable quieter, Runnable louder, Runnable stopMedia, Runnable togglePlay, Runnable nextTrack, Runnable search) {
+    public MediaKeys(Runnable quieter, Runnable louder, Runnable stopMedia, Runnable togglePlay, Runnable nextTrack, Runnable previousTrack, Runnable search) {
         this.quieter = quieter;
         this.louder = louder;
         this.stopMedia = stopMedia;
         this.togglePlay = togglePlay;
         this.nextTrack = nextTrack;
+        this.previousTrack = previousTrack;
         this.search = search;
 
         this.provider.register(KeyStroke.getKeyStroke(0xAE, 0), e -> this.quieter.run());
@@ -40,6 +42,7 @@ public class MediaKeys {
         this.provider.register(KeyStroke.getKeyStroke(0xB2, 0), e -> this.stopMedia.run());
         this.provider.register(KeyStroke.getKeyStroke(0xB3, 0), e -> this.togglePlay.run());
         this.provider.register(KeyStroke.getKeyStroke(0xB0, 0), e -> this.nextTrack.run());
+        this.provider.register(KeyStroke.getKeyStroke(0xB1, 0), e -> this.previousTrack.run());
         this.provider.register(KeyStroke.getKeyStroke(0xAA, 0), e -> this.search.run());
     }
 
