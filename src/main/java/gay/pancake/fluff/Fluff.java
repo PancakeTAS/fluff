@@ -70,8 +70,8 @@ public class Fluff {
             if (this.tracks.isEmpty())
                 this.loadTracks();
 
-            // Track only up to 12 tracks
-            if (this.queue.size() > 12)
+            // Track only up to 4 tracks
+            if (this.queue.size() > 4)
                 continue;
 
             // Get next track
