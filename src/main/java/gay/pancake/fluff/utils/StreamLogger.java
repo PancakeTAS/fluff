@@ -36,10 +36,11 @@ public class StreamLogger {
             try {
                 String line;
                 while ((line = this.stream.readLine()) != null) {
-                    System.err.println(this.prefix + " >>> " + line);
+                    System.out.println(this.prefix + " >>> " + line);
                     if (line.contains("video:0kB"))
                         playNext.run();
                 }
+                this.stop();
             } catch (Exception ignored) {
 
             }

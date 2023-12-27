@@ -3,18 +3,14 @@ package gay.pancake.fluff.utils;
 import javax.sound.sampled.*;
 
 /**
- * Class wrapping around yt-dlp for streaming youtube videos.
+ * Fluff's playback engine
  *
  * @author Pancake
  */
 public class PlaybackEngine {
 
     /** Audio format */
-    private static final AudioFormat AUDIO_FORMAT = new AudioFormat(192000, 16, 2, true, false);
-    /** The command to run yt-dlp */
-    private static final String YTDL = "yt-dlp %URL% --no-part --no-warnings --no-playlist --no-check-certificate -f ba -o -";
-    /** The command to run ffmpeg */
-    private static final String FFMPEG = "ffmpeg -thread_queue_size 24883200 -rtbufsize 64M -i - -c:a pcm_s16le -bufsize 64M -af \"silenceremove=1:0:-55dB\" -f s16le -ar 192000 -";
+    private static final AudioFormat AUDIO_FORMAT = new AudioFormat(48000, 16, 2, true, false);
 
     /** The mixer */
     private static Mixer mixer;
@@ -33,7 +29,7 @@ public class PlaybackEngine {
         var lineInfo = new DataLine.Info(SourceDataLine.class, AUDIO_FORMAT);
         for (var mixerInfo : AudioSystem.getMixerInfo())
             if (AudioSystem.getMixer(mixerInfo).isLineSupported(lineInfo))
-                System.out.println(mixerInfo.getName() + " / " + mixerInfo.getDescription());
+                System.err.println(mixerInfo.getName() + " / " + mixerInfo.getDescription());
     }
 
     /**
@@ -46,36 +42,21 @@ public class PlaybackEngine {
             if (!mixerInfo.getName().contains(device))
                 continue;
 
-            System.out.println("Setting default audio device to " + mixerInfo.getName());
+            System.err.println("Setting default audio device to " + mixerInfo.getName());
             mixer = AudioSystem.getMixer(mixerInfo);
         }
     }
 
     /**
-     * Download a youtube video
+     * Play a song
      *
      * @param url The url of the video
-     * @param playNext The runnable to run when the video finishes
-     * @throws Exception If an error occurs while downloading the video
+     * @param playNext The runnable to run when the song finishes
+     * @throws Exception If an error occurs while downloading the song
      * @return The thread that is downloading the video
      */
-    public Thread downloadYoutubeVideo(String url, Runnable playNext) throws Exception {
-        // Launch yt-dlp
-        ProcessBuilder processBuilder;
-        if (System.getProperty("os.name").toLowerCase().contains("win"))
-            processBuilder = new ProcessBuilder("cmd.exe", "/c", (YTDL + " | " + FFMPEG).replace("%URL%", url));
-        else
-            processBuilder = new ProcessBuilder("/bin/bash", "-c", (YTDL + " | " + FFMPEG).replace("%URL%", url));
-
-        var process = processBuilder.start();
-
-        // Get input and error streams
-        var inputStream = process.getInputStream();
-        var errorStream = process.getErrorStream();
-
-        // Create logger for error stream
-        var streamLogger = new StreamLogger(errorStream, "yt-dlp");
-        streamLogger.start(playNext);
+    public Thread play(String url, Runnable playNext) throws Exception {
+        var inputStream = YouTubeDownloader.convertToPcm(YouTubeDownloader.downloadYoutubeVideo(url));
 
         return Thread.ofPlatform().unstarted(() -> {
             try {
@@ -96,7 +77,7 @@ public class PlaybackEngine {
                 this.volumeControl.setValue(this.volume);
 
                 // Read from input stream and write to audio line
-                var buffer = new byte[1024];
+                var buffer = new byte[4096];
                 var read = 0;
                 while (!Thread.currentThread().getName().equals("Exited") && (read = inputStream.read(buffer)) != -1) {
                     while (this.paused)
@@ -105,12 +86,14 @@ public class PlaybackEngine {
                     line.write(buffer, 0, read);
                 }
 
+                // Play next track if the current track has finished
+                if (!Thread.currentThread().getName().equals("Exited"))
+                    playNext.run();
+
                 // Close audio line
                 line.drain();
                 line.close();
-                if (Thread.currentThread().getName().equals("Exited"))
-                    streamLogger.stop();
-                process.destroy();
+                inputStream.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }

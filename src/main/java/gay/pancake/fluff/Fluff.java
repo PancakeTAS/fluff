@@ -64,7 +64,7 @@ public class Fluff {
                 this.loadTracks();
 
             // Track only up to 4 tracks
-            if (this.queue.size() > 4)
+            if (this.queue.size() >= 3)
                 continue;
 
             // Get next track
@@ -72,8 +72,9 @@ public class Fluff {
 
             // Try to prepare track
             try {
-                System.out.println("Downloading audio... (" + url + ")");
-                this.queue.add(new AbstractMap.SimpleEntry<>(this.playbackEngine.downloadYoutubeVideo(url, this::playNext), url));
+                System.err.println("Downloading audio... (" + url + ")");
+                this.queue.add(new AbstractMap.SimpleEntry<>(this.playbackEngine.play(url, this::playNext), url));
+                System.gc();
             } catch (Exception e) {
                 System.err.println("Error while preparing track! (" + url + ")");
                 e.printStackTrace();
@@ -98,7 +99,7 @@ public class Fluff {
             Thread.yield();
 
         // Play next track
-        System.out.println("Playing next track...");
+        System.err.println("Playing next track...");
         var entry = this.queue.poll();
         this.currentPlayback = Objects.requireNonNull(entry).getKey();
         this.currentTrack = entry.getValue();
@@ -119,7 +120,7 @@ public class Fluff {
 
             // Play previous track
             var url = this.previousTracks.pop();
-            this.currentPlayback = this.playbackEngine.downloadYoutubeVideo(url, this::playNext);
+            this.currentPlayback = this.playbackEngine.play(url, this::playNext);
             this.currentTrack = url;
             this.currentPlayback.start();
         } catch (Exception e) {
@@ -168,7 +169,7 @@ public class Fluff {
     public static void main(String[] args) throws Exception {
         // Check arguments
         if (args.length == 0) {
-            System.out.println("Starting Fluff...");
+            System.err.println("Starting Fluff...");
         } else if (args.length == 1 && args[0].equals("--list-devices")) {
             PlaybackEngine.listDevices();
             return;
