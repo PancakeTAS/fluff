@@ -42,7 +42,6 @@ public class PlaybackEngine {
      * @param device The device to set
      */
     public static void defaultAudioDevice(String device) {
-        var lineInfo = new DataLine.Info(SourceDataLine.class, AUDIO_FORMAT);
         for (var mixerInfo : AudioSystem.getMixerInfo()) {
             if (!mixerInfo.getName().contains(device))
                 continue;

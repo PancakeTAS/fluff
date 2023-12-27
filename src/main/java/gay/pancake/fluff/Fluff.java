@@ -1,6 +1,6 @@
 package gay.pancake.fluff;
 
-import gay.pancake.fluff.utils.MediaKeys;
+import com.tulskiy.keymaster.common.Provider;
 import gay.pancake.fluff.utils.PlaybackEngine;
 
 import javax.swing.*;
@@ -16,18 +16,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Fluff {
 
-    /** The youtube downloader instance */
+    /** The playback engine instance */
     private final PlaybackEngine playbackEngine = new PlaybackEngine();
-    /** The media keys instance */
-    private final MediaKeys mediaKeys = new MediaKeys(
-            this.playbackEngine::decreaseVolume,
-            this.playbackEngine::increaseVolume,
-            this::remove,
-            this::togglePlay,
-            this::playNext,
-            this::playPrevious,
-            this::browse
-    );
 
     /** The list of tracks to play */
     private final Queue<String> tracks = new ConcurrentLinkedQueue<>();
@@ -199,8 +189,24 @@ public class Fluff {
 
         }
 
-        // Start application
+        // Create fluff instance
         var fluff = new Fluff();
+
+        // Try to register media keys
+        try {
+            var provider = Provider.getCurrentProvider(false);
+            provider.register(KeyStroke.getKeyStroke(0xAE, 0), e -> fluff.playbackEngine.decreaseVolume());
+            provider.register(KeyStroke.getKeyStroke(0xAF, 0), e -> fluff.playbackEngine.increaseVolume());
+            provider.register(KeyStroke.getKeyStroke(0xB2, 0), e -> fluff.remove());
+            provider.register(KeyStroke.getKeyStroke(0xB3, 0), e -> fluff.togglePlay());
+            provider.register(KeyStroke.getKeyStroke(0xB0, 0), e -> fluff.playNext());
+            provider.register(KeyStroke.getKeyStroke(0xB1, 0), e -> fluff.playPrevious());
+            provider.register(KeyStroke.getKeyStroke(0xAA, 0), e -> fluff.browse());
+        } catch (Exception ignored) {
+
+        }
+
+        // Start application
         fluff.start();
     }
 
