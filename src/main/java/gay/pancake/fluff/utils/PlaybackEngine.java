@@ -14,7 +14,7 @@ public class PlaybackEngine {
     /** The command to run yt-dlp */
     private static final String YTDL = "yt-dlp %URL% --no-part --no-warnings --no-playlist --no-check-certificate -f ba -o -";
     /** The command to run ffmpeg */
-    private static final String FFMPEG = "ffmpeg -rtbufsize 64M -i - -c:a pcm_s16le -bufsize 64M -af \"silenceremove=1:0:-55dB\" -f s16le -ar 192000 -";
+    private static final String FFMPEG = "ffmpeg -thread_queue_size 24883200 -rtbufsize 64M -i - -c:a pcm_s16le -bufsize 64M -af \"silenceremove=1:0:-55dB\" -f s16le -ar 192000 -";
 
     /** The mixer */
     private static Mixer mixer;
@@ -63,7 +63,7 @@ public class PlaybackEngine {
         // Launch yt-dlp
         ProcessBuilder processBuilder;
         if (System.getProperty("os.name").toLowerCase().contains("win"))
-            processBuilder = new ProcessBuilder("cmd.exe", "/k", (YTDL + " | " + FFMPEG).replace("%URL%", url));
+            processBuilder = new ProcessBuilder("cmd.exe", "/c", (YTDL + " | " + FFMPEG).replace("%URL%", url));
         else
             processBuilder = new ProcessBuilder("/bin/bash", "-c", (YTDL + " | " + FFMPEG).replace("%URL%", url));
 

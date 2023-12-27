@@ -1,5 +1,5 @@
 # Fluff
-Fluff is a non-stop music player for YouTube. 
+Fluff is a non-stop music player for YouTube.
 Fluff will play music obtained from a list of YouTube links in a random order and allows you to *yeet* it from your database when you're getting sick of it.
 
 ## How do I install it?
@@ -19,4 +19,4 @@ Use the media keys (next, previous, pause/play) to control the current track pla
 You can also press the search key (if you have one) to open the current track in your browser.
 
 ## How does it work?
-Fluff uses yt-dlp to download up to four tracks at a time, encodes them using ffmpeg and then plays them using the Java Sound API.
+Fluff uses yt-dlp to download up to four tracks at a time, encodes them using ffmpeg and then plays them using the Java Sound API. Pausing will become a feature too.. eventually
